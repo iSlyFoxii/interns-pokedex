@@ -12,6 +12,8 @@ router.get('/pokemon/:nameOrId', pokemonController.getPokemonDetails);
 // API routes
 router.get('/api/pokemon', pokemonController.apiGetAllPokemon);
 router.get('/api/pokemon/search', pokemonController.apiSearchPokemon);
+router.get('/api/pokemon/random', pokemonController.apiGetRandomPokemon);
+router.get('/api/pokemon/compare', pokemonController.apiComparePokemon);
 router.get('/api/pokemon/:nameOrId', pokemonController.apiGetPokemonDetails);
 router.get('/api/types', pokemonController.apiGetTypes);
 router.get('/api/types/:type', pokemonController.apiGetPokemonByType);
