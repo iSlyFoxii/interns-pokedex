@@ -156,3 +156,20 @@ export const apiGetPokemonByType = async (req, res) => {
         res.status(500).json({ success: false, message: 'Service error', error: error.message });
     }
 };
+
+// At the bottom of your controller file, make sure you have:
+export {
+    getHomePage,
+    getPokemonDetails,
+    searchPokemon,
+    getPokemonByType,
+    comparePokemon,
+    getRandomPokemon,
+    apiGetAllPokemon,
+    apiGetPokemonDetails,
+    apiSearchPokemon,
+    apiGetTypes,
+    apiGetPokemonByType,
+    apiGetRandomPokemon,
+    apiComparePokemon
+};
