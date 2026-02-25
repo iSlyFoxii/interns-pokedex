@@ -24,24 +24,24 @@ app.use('/', routes);
 
 // Error handlers
 app.use((req, res) => {
-    res.status(404).render('error', {
-        message: 'Page not found',
-        error: 'The page you are looking for does not exist.'
-    });
+  res.status(404).render('error', {
+    message: 'Page not found',
+    error: 'The page you are looking for does not exist.'
+  });
 });
 
 app.use((err, _req, res, _next) => {
-    res.status(500).render('error', {
-        message: 'Something went wrong',
-        error: err.message
-    });
+  res.status(500).render('error', {
+    message: 'Something went wrong',
+    error: err.message
+  });
 });
 
 // Start server
 if (nodeEnv !== 'test') {
-    app.listen(PORT, () => {
-        console.log(`Pokedex server running at http://localhost:${PORT}`);
-    });
+  app.listen(PORT, () => {
+    console.log(`Pokedex server running at http://localhost:${PORT}`);
+  });
 }
 
 export default app;
