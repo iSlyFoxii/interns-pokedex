@@ -1,175 +1,200 @@
-// src/controllers/pokemonController.js
 import * as pokemonService from '../services/pokemonService.js';
+// ============================================
+// VIEW CONTROLLERS (Return HTML via EJS)
+// ============================================
 
-// ====================
-// VIEW ROUTES
-// ====================
-
-// Home / list Pokémon
+/**
+ * Home page - List all Pokemon with pagination
+ */
 export const getHomePage = async (req, res) => {
-    const types = await pokemonService.getPokemonTypes();
-    const { type, page } = req.query;
-
-    let pokemonData;
     try {
-        if (type) {
-            pokemonData = await pokemonService.getPokemonByType(type, page ? Number(page) : 1);
-            if (!pokemonData) {
-                pokemonData = { pokemon: [], totalCount: 0, currentPage: 1, totalPages: 1 };
-            }
-        } else {
-            pokemonData = await pokemonService.getAllPokemon(page ? Number(page) : 1);
-        }
+        // Get pagination parameters from query string
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
 
+        // Fetch data from services
+        const data = await pokemonService.getAllPokemon(page, limit);
+        const types = await pokemonService.getPokemonTypes();
+
+        // Render the index template
         res.render('index', {
-            pokemon: pokemonData.pokemon,
+            ...data,
             types,
             searchQuery: '',
-            selectedType: type || '',
-            totalCount: pokemonData.totalCount,
-            currentPage: pokemonData.currentPage,
-            totalPages: pokemonData.totalPages
+            selectedType: ''
         });
     } catch (error) {
-        res.status(500).render('error', { message: 'Something went wrong', error: error.message });
+        res.status(500).render('error', {
+            message: 'Failed to load Pokemon',
+            error: error.message
+        });
     }
 };
 
-// Pokémon details page
+/**
+ * Pokemon detail page
+ */
 export const getPokemonDetails = async (req, res) => {
-    const { nameOrId } = req.params;
     try {
+        const { nameOrId } = req.params;
         const pokemon = await pokemonService.getPokemonDetails(nameOrId);
-        if (!pokemon) return res.status(404).render('error', { message: 'Pokémon not found', error: '' });
 
-        const types = await pokemonService.getPokemonTypes();
-        res.render('pokemonDetails', { pokemon, types });
+        if (!pokemon) {
+            return res.status(404).render('error', {
+                message: 'Pokemon not found',
+                error: `No Pokemon found with name or ID: ${nameOrId}`
+            });
+        }
+
+        res.render('pokemon', { pokemon });
     } catch (error) {
-        res.status(500).render('error', { message: 'Something went wrong', error: error.message });
+        res.status(500).render('error', {
+            message: 'Failed to load Pokemon details',
+            error: error.message
+        });
     }
 };
 
-// Type filter
-export const getPokemonByType = async (req, res) => {
-    const { type } = req.params;
-    const { page } = req.query;
+/**
+ * Search results page
+ */
+export const searchPokemon = async (req, res) => {
     try {
+        const { q } = req.query;
         const types = await pokemonService.getPokemonTypes();
-        const pokemonData = await pokemonService.getPokemonByType(type, page ? Number(page) : 1);
+        const data = await pokemonService.searchPokemon(q);
 
-        if (!pokemonData || pokemonData.pokemon.length === 0) {
-            // Render error page with 404
+        res.render('index', {
+            ...data,
+            types,
+            currentPage: 1,
+            totalPages: 1,
+            hasNextPage: false,
+            hasPrevPage: false,
+            searchQuery: q || '',
+            selectedType: ''
+        });
+    } catch (error) {
+        res.status(500).render('error', {
+            message: 'Search failed',
+            error: error.message
+        });
+    }
+};
+
+/**
+ * Filter by type page
+ */
+export const getPokemonByType = async (req, res) => {
+    try {
+        const { type } = req.params;
+        const page = parseInt(req.query.page) || 1;
+        const types = await pokemonService.getPokemonTypes();
+        const data = await pokemonService.getPokemonByType(type, page);
+
+        if (!data) {
             return res.status(404).render('error', {
-                message: `No Pokémon found for type "${type}"`,
-                error: ''
+                message: 'Type not found',
+                error: `No Pokemon type found: ${type}`
             });
         }
 
         res.render('index', {
-            pokemon: pokemonData.pokemon,
+            ...data,
             types,
             searchQuery: '',
-            selectedType: type,
-            totalCount: pokemonData.totalCount,
-            currentPage: pokemonData.currentPage,
-            totalPages: pokemonData.totalPages
+            selectedType: type
         });
     } catch (error) {
-        res.status(500).render('error', { message: 'Something went wrong', error: error.message });
+        res.status(500).render('error', {
+            message: 'Failed to load Pokemon by type',
+            error: error.message
+        });
     }
 };
 
-// Search Pokémon
-export const searchPokemon = async (req, res) => {
-    const { q } = req.query;
-    try {
-        const types = await pokemonService.getPokemonTypes();
-        const results = await pokemonService.searchPokemon(q);
+// ============================================
+// API CONTROLLERS (Return JSON)
+// ============================================
 
-        res.render('index', {
-            pokemon: results.pokemon,
-            types,
-            searchQuery: q || '',
-            selectedType: '',
-            totalCount: results.totalCount,
-            currentPage: 1,
-            totalPages: 1
-        });
-    } catch (error) {
-        res.status(500).render('error', { message: 'Something went wrong', error: error.message });
-    }
-};
-
-// ====================
-// API ROUTES
-// ====================
-
+/**
+ * API: Get all Pokemon
+ */
 export const apiGetAllPokemon = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || undefined;
+        const limit = parseInt(req.query.limit) || 20;
         const data = await pokemonService.getAllPokemon(page, limit);
-        res.status(200).json({ success: true, data });
+        res.json({ success: true, data });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Service error', error: error.message });
+        res.status(500).json({ success: false, error: error.message });
     }
 };
 
+/**
+ * API: Get Pokemon by name or ID
+ */
+export const apiGetPokemonDetails = async (req, res) => {
+    try {
+        const { nameOrId } = req.params;
+        const pokemon = await pokemonService.getPokemonDetails(nameOrId);
+
+        if (!pokemon) {
+            return res.status(404).json({
+                success: false,
+                error: `Pokemon not found: ${nameOrId}`
+            });
+        }
+
+        res.json({ success: true, data: pokemon });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
+};
+
+/**
+ * API: Search Pokemon
+ */
 export const apiSearchPokemon = async (req, res) => {
     try {
         const { q } = req.query;
         const data = await pokemonService.searchPokemon(q);
-        res.status(200).json({ success: true, data });
+        res.json({ success: true, data });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Service error', error: error.message });
+        res.status(500).json({ success: false, error: error.message });
     }
 };
 
-export const apiGetPokemonDetails = async (req, res) => {
+/**
+ * API: Get all types
+ */
+export const apiGetTypes = async (req, res) => {
     try {
-        const { nameOrId } = req.params;
-        const data = await pokemonService.getPokemonDetails(nameOrId);
-        if (!data) return res.status(404).json({ success: false, message: 'Pokémon not found' });
-        res.status(200).json({ success: true, data });
+        const types = await pokemonService.getPokemonTypes();
+        res.json({ success: true, data: types });
     } catch (error) {
-        res.status(500).json({ success: false, message: 'Service error', error: error.message });
+        res.status(500).json({ success: false, error: error.message });
     }
 };
 
-export const apiGetTypes = async (_req, res) => {
-    try {
-        const data = await pokemonService.getPokemonTypes();
-        res.status(200).json({ success: true, data });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Service error', error: error.message });
-    }
-};
-
+/**
+ * API: Get Pokemon by type
+ */
 export const apiGetPokemonByType = async (req, res) => {
     try {
         const { type } = req.params;
         const page = parseInt(req.query.page) || 1;
         const data = await pokemonService.getPokemonByType(type, page);
-        if (!data) return res.status(404).json({ success: false, message: 'No Pokémon found for this type' });
-        res.status(200).json({ success: true, data });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Service error', error: error.message });
-    }
-};
 
-// At the bottom of your controller file, make sure you have:
-export {
-    getHomePage,
-    getPokemonDetails,
-    searchPokemon,
-    getPokemonByType,
-    comparePokemon,
-    getRandomPokemon,
-    apiGetAllPokemon,
-    apiGetPokemonDetails,
-    apiSearchPokemon,
-    apiGetTypes,
-    apiGetPokemonByType,
-    apiGetRandomPokemon,
-    apiComparePokemon
+        if (!data) {
+            return res.status(404).json({
+                success: false,
+                error: `Type not found: ${type}`
+            });
+        }
+
+        res.json({ success: true, data });
+    } catch (error) {
+        res.status(500).json({ success: false, error: error.message });
+    }
 };
