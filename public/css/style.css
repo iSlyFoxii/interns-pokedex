@@ -1,3 +1,4 @@
+/* Reset and Base Styles */
 * {
     margin: 0;
     padding: 0;
@@ -42,16 +43,6 @@ body {
     color: var(--text-dark);
 }
 
-
-
-
-
-
-
-
-
-
-
 /* Pokedex Container */
 .pokedex-container {
     max-width: 1400px;
@@ -67,18 +58,6 @@ body {
     padding: 30px;
     background: var(--pokedex-cream);
 }
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Header */
 .pokedex-header {
@@ -159,20 +138,6 @@ body {
     text-shadow: 3px 3px 0 var(--pokedex-dark-red);
     letter-spacing: 2px;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Search Section */
 .search-section {
@@ -256,20 +221,6 @@ body {
 .type-btn.active {
     box-shadow: 0 0 0 3px var(--text-dark);
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Type Badge Colors */
 .type-normal,
@@ -365,17 +316,6 @@ body {
 .type-btn.type-fairy {
     background: var(--type-fairy);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /* Pokemon Grid */
 .pokemon-grid {
